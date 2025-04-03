@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SiteRadius - Analyse de cohésion sémantique</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Ajout de Chart.js pour les graphiques -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Plugin d'annotation pour Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.1.0/dist/chartjs-plugin-annotation.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-globe"></i> SiteRadius</h1>
+            <p>Analysez la cohésion sémantique de n'importe quel site web</p>
+        </header>
+
+        <main>
+            <section class="input-section">
+                <div class="card">
+                    <h2>Analyser un site web</h2>
+                    <form id="analysis-form">
+                        <div class="form-group">
+                            <label for="url">URL du site web:</label>
+                            <input type="url" id="url" name="url" required placeholder="https://example.com">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="max-pages">Nombre max. de pages:</label>
+                                <input type="number" id="max-pages" name="max-pages" min="5" max="10000" value="100">
+                            </div>
+                            <div class="form-group checkbox-group">
+                                <input type="checkbox" id="same-domain" name="same-domain" checked>
+                                <label for="same-domain">Rester sur le même domaine</label>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn primary">
+                            <i class="fas fa-search"></i> Analyser
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+            <section id="loading-section" class="hidden">
+                <div class="card">
+                    <h2>Analyse en cours...</h2>
+                    <div class="progress-container">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progress-fill"></div>
+                        </div>
+                        <div class="progress-text" id="progress-text">0%</div>
+                    </div>
+                    <p id="status-message">Initialisation de l'analyse...</p>
+                </div>
+            </section>
+
+            <section id="results-section" class="hidden">
+                <div class="card">
+                    <h2>Résultats de l'analyse</h2>
+                    <div class="site-info">
+                        <h3 id="site-url">example.com</h3>
+                        <p id="pages-info">50 pages analysées</p>
+                    </div>
+
+                    <div class="metrics-container">
+                        <div class="metric-card">
+                            <h3>Site Focus Score</h3>
+                            <div id="focus-value" class="gauge-value">0.000</div>
+                            <div class="gauge-container">
+                                <div class="gauge-arc focus-arc"></div>
+                                <div id="focus-fill" class="gauge-fill"></div>
+                                <div class="gauge-center"></div>
+                                <div class="gauge-markers">
+                                    <div class="marker marker-0">0</div>
+                                    <div class="marker marker-02">0.2</div>
+                                    <div class="marker marker-04">0.4</div>
+                                    <div class="marker marker-06">0.6</div>
+                                    <div class="marker marker-08">0.8</div>
+                                    <div class="marker marker-1">1.0</div>
+                                </div>
+                            </div>
+                            <p>Mesure à quel point le contenu du site est aligné sur un thème central. Des scores plus élevés indiquent une meilleure cohésion thématique.</p>
+                        </div>
+
+                        <div class="metric-card">
+                            <h3>Site Radius</h3>
+                            <div id="radius-value" class="gauge-value">0.000</div>
+                            <div class="gauge-container">
+                                <div class="gauge-arc radius-arc"></div>
+                                <div id="radius-fill" class="gauge-fill"></div>
+                                <div class="gauge-center"></div>
+                                <div class="gauge-markers">
+                                    <div class="marker marker-0">0</div>
+                                    <div class="marker marker-02">0.2</div>
+                                    <div class="marker marker-04">0.4</div>
+                                    <div class="marker marker-06">0.6</div>
+                                    <div class="marker marker-08">0.8</div>
+                                    <div class="marker marker-1">1.0</div>
+                                </div>
+                            </div>
+                            <p>Mesure la distance moyenne des pages par rapport au thème central. Des valeurs plus basses indiquent un contenu plus cohérent.</p>
+                        </div>
+                    </div>
+
+                    <div class="content-analysis-container">
+                        <h3>Distribution de Similarité du Contenu</h3>
+                        <div class="chart-container">
+                            <canvas id="similarity-distribution-chart"></canvas>
+                        </div>
+                        
+                        <h3>Analyse des Clusters de Contenu</h3>
+                        <div class="chart-container">
+                            <canvas id="content-clusters-chart"></canvas>
+                        </div>
+                        
+                        <h3>Composition du Contenu</h3>
+                        <div class="content-composition">
+                            <div class="composition-card core">
+                                <h4>Contenu Central</h4>
+                                <div class="composition-count" id="core-count">0 pages</div>
+                                <div class="composition-percent" id="core-percent">0% du site</div>
+                            </div>
+                            <div class="composition-card supporting">
+                                <h4>Contenu de Support</h4>
+                                <div class="composition-count" id="supporting-count">0 pages</div>
+                                <div class="composition-percent" id="supporting-percent">0% du site</div>
+                            </div>
+                            <div class="composition-card peripheral">
+                                <h4>Contenu Périphérique</h4>
+                                <div class="composition-count" id="peripheral-count">0 pages</div>
+                                <div class="composition-percent" id="peripheral-percent">0% du site</div>
+                            </div>
+                        </div>
+                        <div class="composition-info">
+                            <button id="composition-info-btn" class="btn info">Que signifient ces catégories?</button>
+                            <div id="composition-info-text" class="hidden">
+                                <p><strong>Contenu Central:</strong> Pages fortement alignées sur le thème central du site (similarité > 0.8). Ces pages représentent le cœur thématique du site.</p>
+                                <p><strong>Contenu de Support:</strong> Pages modérément alignées sur le thème central (similarité 0.6-0.8). Ces pages soutiennent le thème principal.</p>
+                                <p><strong>Contenu Périphérique:</strong> Pages faiblement alignées sur le thème central (similarité < 0.6). Ces pages peuvent être hors sujet ou couvrir des sujets tangentiels.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="page-metrics-container">
+                        <h3>Métriques par page</h3>
+                        <div class="table-container">
+                            <table id="page-metrics-table">
+                                <thead>
+                                    <tr>
+                                        <th>URL</th>
+                                        <th>Similarité</th>
+                                        <th>Distance</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="page-metrics-body">
+                                    <!-- Filled dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <button id="new-analysis-btn" class="btn secondary">
+                        <i class="fas fa-redo"></i> Nouvelle analyse
+                    </button>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>&copy; 2025 SiteRadius - Analyse de cohésion sémantique</p>
+        </footer>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>
